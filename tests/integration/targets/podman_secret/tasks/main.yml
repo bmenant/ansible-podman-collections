@@ -18,9 +18,13 @@
         executable: "{{ test_executable | default('podman') }}"
         state: absent
         name: "{{ item }}"
+      ignore_errors: true
       loop:
         - mysecret
         - mysecret2
+        - mysecret3
+        - mysecret4
+        - mysecret5
 
     - name: Create secret
       containers.podman.podman_secret:
@@ -376,6 +380,10 @@
             state: present
             debug: true
           register: secret3
+
+        - name: DEBUG secret3 BMENANT
+          debug:
+            var: secret3
 
         - name: Check outputs
           assert:
