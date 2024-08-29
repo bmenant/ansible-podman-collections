@@ -28,6 +28,7 @@
         name: mysecret
         debug: true
         data: secret content
+      register: created
 
     - name: Recreate secret
       containers.podman.podman_secret:
@@ -58,6 +59,7 @@
     - name: Check assertions
       assert:
         that:
+          - created is changed
           - forced is changed
           - skipped is not changed
           - forced2 is changed
@@ -66,6 +68,7 @@
     - name: Check assertions for podman >= 4.7.0
       assert:
         that:
+          - created is changed
           - forced is changed
           - skipped is not changed
           - forced2 is not changed
