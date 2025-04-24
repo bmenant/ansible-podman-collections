@@ -141,6 +141,17 @@ DOCUMENTATION = r'''
           description: Remove intermediate containers after a successful build
           type: bool
           default: True
+        build_args:
+          description:
+            - Dictionary of key=value pairs to use as build arguments (i.e. ARG instructions in Containerfile).
+          type: dict
+        secrets:
+          description:
+            - Specify multiple secret ids to mount at /run/secrets/id for use in --mount flag in RUN instructions.
+            - Each secret value must be written to an environment variable or file named by the secret id on the target host.
+            - See podman-build --secret option for details.
+          type: list
+          elements: str
         extra_args:
           description:
             - Extra args to pass to build, if executed. Does not idempotently check for new build args.
@@ -774,6 +785,17 @@ class PodmanImageManager(object):
         if annotation:
             for k, v in annotation.items():
                 args.extend(['--annotation', '{k}={v}'.format(k=k, v=v)])
+
+        build_args = self.build.get('build_args')
+        if build_args:
+            for k, v in build_args.items():
+                args.extend(['--build-arg', '{k}={v}'.format(k=k, v=v)])
+
+        secrets = self.build.get('secrets')
+        if secrets:
+            for v in secrets:
+                if v:
+                    args.extend(['--secret', 'id={v}'.format(v=v)])
 
         if self.ca_cert_dir:
             args.extend(['--cert-dir', self.ca_cert_dir])
