@@ -324,6 +324,44 @@
           - docker_build2 is not changed
           - "'localhost/dockerimage:latest' in dockerimage_info.images[0]['RepoTags'][0]"
 
+    - name: Build image with build args
+      tags: only
+      containers.podman.podman_image:
+        executable: "{{ test_executable | default('podman') }}"
+        name: testimage-with-args
+        state: build
+        build:
+          container_file: |-
+            FROM quay.io/coreos/alpine-sh
+            RUN if test "$TESTARG1" = 'abcde'; then echo PASSED; else exit 1; fi
+            RUN if test "$TESTARG2" -eq 1234; then echo PASSED; else exit 2; fi
+          build_args:
+            TESTARG1: abcd
+            TESTARG2: 1234
+      register: build_with_args_info
+
+    - name: Build image with secrets
+      tags: only
+      containers.podman.podman_image:
+        executable: "{{ test_executable | default('podman') }}"
+        name: testimage-with-secrets
+        state: build
+        build:
+          container_file: |-
+            FROM quay.io/coreos/alpine-sh
+            RUN --mount=type=secret,id=testsecret1 if grep -q abcd < /run/secrets/testsecret1; then echo PASSED; else exit 1; fi
+            RUN --mount=type=secret,id=testsecret2 if grep -q 1234 < /run/secrets/testsecret2; then echo PASSED; else exit 2; fi
+          secrets:
+            testsecret1: abcd
+            testsecret2: 1234
+      register: build_with_secrets_info
+
+    - name: Ensure image was built with secrets
+      assert:
+        that:
+          - build_with_args_info is success
+          - build_with_secrets_info is success
+
     - name: push image that doesn't exit to nowhere
       containers.podman.podman_image:
         executable: "{{ test_executable | default('podman') }}"
